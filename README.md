@@ -1,5 +1,8 @@
 # Preparation of external traits for genetic correlation analysis using LDSC
 
+```
+Working directory: /data1/sanghyeon/data/GWAS_for_rg/
+```
 
 ## Step 1: Preparse metadata
 
@@ -81,5 +84,7 @@ QCed GWAS written: /data1/sanghyeon/data/GWAS_for_rg/qced_gwas/AAA.Klarin2020.ts
 
 ## Step 3. Munging
 
-- `Path_Munged_Nobs`
-- `maxNobs` (optional): The maximum number of samples (case + control for binary trait)
+Use `02_1.munge.sh` to run munging using LDSC and within the script, specify variable `metadata_prefix`.
+Then, use `02_2.parse_munge.R` to make metadata with `Path_Munged` column added and saved with the following suffix `qced_gwas_munged_added` added to the metadata file name prefix. Also, a separate file with parsed information from munged logs which will be saved with the following suffix `munging_parsed`.
+
+The `Path_Munged column` in the metadata output `<metadata_prefix>.qced_gwas_munged_added.csv` can be used for further genetic correlation analysis with LDSC.

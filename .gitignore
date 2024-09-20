@@ -3,3 +3,8 @@
 *.tsv
 *.log
 *.txt
+*.gz
+*.zip
+raw_gwas/ICH_GWAS_phase1_finalresults_allICH
+raw_gwas/ICH_GWAS_phase1_finalresults_deepICH
+raw_gwas/ICH_GWAS_phase1_finalresults_lobarICH

@@ -25,7 +25,9 @@ for (idx1 in 1:nrow(df.metadata)){
     f.out <- paste0("/data1/sanghyeon/data/GWAS_for_rg/qced_gwas/", prefix, ".tsv")
     if(file.exists(f.out)) {df.qced_path <- rbind(df.qced_path, data.frame(Prefix=prefix, Path_QCed_GWAS=f.out)); next}
 
-    file.gwas <- df.metadata[idx1,]$Path_raw_GWAS
+    log.file <- file(paste0("log.GWAS_QC/GWAS_QC.", prefix, ".log"),open="wt"); .LOG(":: GWAS QC ::\n\t- Prefix: ", prefix, file=log.file)
+
+    file.gwas <- df.metadata[idx1,]$Path_raw_GWAS; .LOG("- GWAS: ", file.gwas, file=log.file)
     col_snp <- df.metadata[idx1,]$col_SNP; col_chr <- df.metadata[idx1,]$col_CHR; col_pos <- df.metadata[idx1,]$col_POS
     col_a1 <- df.metadata[idx1,]$col_EA; col_a2 <- df.metadata[idx1,]$col_OA; parse_OA <- grepl(";", col_a2)
     col_b <- df.metadata[idx1,]$col_BETA; is_or <- as.logical(df.metadata[idx1,]$is_OR); col_se <- df.metadata[idx1,]$col_SE
@@ -41,8 +43,6 @@ for (idx1 in 1:nrow(df.metadata)){
     colnames.given <- colnames.given[which(!is.na(colnames.given))]
 
     Nobs <- df.metadata[idx1,]$Nobs_input; annovar <- as.logical(df.metadata[idx1,]$ANNOVAR); gbuild <- df.metadata[idx1,]$genome_build
-
-    log.file <- file(paste0("log.GWAS_QC/GWAS_QC.", prefix, ".log"),open="wt"); .LOG(":: GWAS QC ::\n\t- Prefix: ", prefix, file=log.file)
 
     ## Download if GWAS is absent
     if (!file.exists(file.gwas)) {download_GWAS(cmd_wget=df.metadata[idx1,]$Download_wget); .LOG("\n[Downloading GWAS]", file=log.file)}
@@ -92,6 +92,10 @@ for (idx1 in 1:nrow(df.metadata)){
 
     if (annovar) {df.gwas.subset <- rsid_mapping(df.gwas.subset, gbuild, nthread)}
 
+    ## Make sure to modify SNP with rs23423:A:G or rs2423_A_G format in SNP column (e.g., BMI Pulit2018)
+    df.gwas.subset$SNP <- apply(df.gwas.subset, 1, function(row){ifelse(grepl("^rs", row[["SNP"]]) & grepl(":", row[["SNP"]]), strsplit(row[["SNP"]], ":")[[1]][1], row[["SNP"]])})
+    df.gwas.subset$SNP <- apply(df.gwas.subset, 1, function(row){ifelse(grepl("^rs", row[["SNP"]]) & grepl("_", row[["SNP"]]), strsplit(row[["SNP"]], "_")[[1]][1], row[["SNP"]])})
+    
     df.gwas.subset <- df.gwas.subset %>% filter(SNP %in% snplist.hm3)
 
     if (parse_Nobs_from_case_control){df.gwas.subset$N <- apply(df.gwas.subset, 1, function(row){as.numeric(row[["Ncase"]]) + as.numeric(row[["Ncontrol"]])})}
@@ -115,3 +119,7 @@ df.metadata <- df.metadata %>%
 write.table(df.metadata, 
             paste0(metadata_prefix, ".qced_gwas_added.csv"),
             sep=",", row.names=F, quote=T)
+
+write.table(df.metadata %>% dplyr::select(Trait_name_unique, Path_QCed_GWAS), 
+            paste0(metadata_prefix, ".for_munging.csv"),
+            sep=",", row.names=F, quote=F)
