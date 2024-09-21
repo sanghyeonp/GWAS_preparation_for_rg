@@ -4,6 +4,8 @@
 Working directory: /data1/sanghyeon/data/GWAS_for_rg/
 ```
 
+Acknowledgment: The origin of the metadata being utilized is from Marios Georgakis tweet (https://x.com/MariosGeorgakis/status/1825216813342605421).
+
 ## Step 1: Preparse metadata
 
 Specify the metadata (csv) file name prefix to variable, `metadata_prefix` and number of threads to use at `nthread`.
