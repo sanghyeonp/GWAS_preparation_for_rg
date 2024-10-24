@@ -32,6 +32,11 @@ for (idx1 in 1:nrow(df.metadata)){
     col_a1 <- df.metadata[idx1,]$col_EA; col_a2 <- df.metadata[idx1,]$col_OA; parse_OA <- grepl(";", col_a2)
     col_b <- df.metadata[idx1,]$col_BETA; is_or <- as.logical(df.metadata[idx1,]$is_OR); col_se <- df.metadata[idx1,]$col_SE
     col_p <- df.metadata[idx1,]$col_P; col_n <- df.metadata[idx1,]$col_N
+    Nobs <- df.metadata[idx1,]$Nobs_input; annovar <- as.logical(df.metadata[idx1,]$ANNOVAR); gbuild <- df.metadata[idx1,]$genome_build
+
+    if (as.logical(df.metadata[idx1,]$UKBB_Neale_lab)){
+        col_snp <- "rsid"; col_chr <- "chr"; col_pos <- "pos"; col_a1 <- "A1"; col_a2 <- "A2"; annovar <- FALSE
+    }
 
     colnames.given <- c(col_snp, col_chr, col_pos, col_a1, col_b, col_se, col_p)
     if(!grepl(";", col_a2)){colnames.given <- c(colnames.given, col_a2)}
@@ -42,14 +47,25 @@ for (idx1 in 1:nrow(df.metadata)){
     ### Drop any NA columns
     colnames.given <- colnames.given[which(!is.na(colnames.given))]
 
-    Nobs <- df.metadata[idx1,]$Nobs_input; annovar <- as.logical(df.metadata[idx1,]$ANNOVAR); gbuild <- df.metadata[idx1,]$genome_build
-
     ## Download if GWAS is absent
     if (!file.exists(file.gwas)) {download_GWAS(cmd_wget=df.metadata[idx1,]$Download_wget); .LOG("\n[Downloading GWAS]", file=log.file)}
 
     ## Read GWAS
     df.gwas <- fread(file.gwas, data.table=F, fill=TRUE)
+    if (as.logical(df.metadata[idx1,]$UKBB_Neale_lab)){
+        df.var <- fread("UKBB_Neale_lab.variants.tsv.gz", data.table=F, select=c("variant", "rsid", "chr", "pos", "ref", "alt", "minor_allele", "minor_AF")) %>%
+            mutate(alt_is_minor=alt==minor_allele,
+                A1=ifelse(alt_is_minor, alt, ref),
+                A2=ifelse(alt_is_minor, ref, alt),
+                A1freq=ifelse(alt_is_minor, minor_AF, 1-minor_AF)) %>%
+            dplyr::select(-ref, -alt, -minor_allele, -minor_AF)
+        df.gwas <- df.gwas %>%
+            dplyr::select(-minor_allele, -minor_AF) %>%
+            left_join(df.var, by="variant") %>%
+            mutate(beta=ifelse(alt_is_minor, beta, -beta))
+    }
     colnames.gwas <- colnames(df.gwas)
+    
 
     ## Sanity check
     .LOG("\n[Sanity check]", file=log.file); sanity <- TRUE

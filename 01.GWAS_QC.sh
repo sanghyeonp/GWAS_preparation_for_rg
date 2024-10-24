@@ -3,7 +3,8 @@
 #SBATCH -p cpu
 #SBATCH -o ./%x_%j.out
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=21
+#SBATCH --nodelist=node3
+#SBATCH --cpus-per-task=11
 #SBATCH --time=14-00:00:00
 #SBATCH --mail-user=sh.austin.park@gmail.com 
 #SBATCH --mail-type=END,FAIL 
